@@ -1,0 +1,54 @@
+#include<WinSock2.h>
+#include<stdio.h>
+#pragma comment(lib,"ws2_32.lib")
+void main()
+{
+	//加载套接字库
+	WORD wVversionRequested;
+	WSADATA wsData;
+	int err;
+	wVversionRequested=MAKEWORD(1,1);
+	err=WSAStartup(wVversionRequested,&wsData);
+	if(err!=0)
+	{
+		return;
+	}
+	if(LOBYTE(wsData.wVersion)!=1||HIBYTE(wsData.wVersion)!=1)
+	{
+		WSACleanup();
+		return;
+	}
+	//创建套接字
+	SOCKET sockServer=socket(AF_INET,SOCK_DGRAM,0);
+	//设置服务器地址信息
+	SOCKADDR_IN addServer;
+	addServer.sin_addr.S_un.S_addr=inet_addr("127.0.0.1");
+	addServer.sin_family=AF_INET;
+	addServer.sin_port=htons(6000);
+
+	char recvBuff[100];
+	char sendBuff[100];
+	char tempBuff[200];
+	int len=sizeof(SOCKADDR);
+	while(1)
+	{
+		//发送数据
+		printf("please input the data:\n");
+		gets(sendBuff);
+		sendto(sockServer,sendBuff,strlen(sendBuff)+1,0,(SOCKADDR*)&addServer,len);
+		//等待接受数据
+		recvfrom(sockServer,recvBuff,100,0,(SOCKADDR*)&addServer,&len);
+		if('q'==recvBuff[0])
+		{
+			sendto(sockServer,"q",strlen("q"),0,(SOCKADDR*)&addServer,len);
+			printf("Chat end\n");
+			break;
+		}
+		sprintf(tempBuff,"%s say: %s",inet_ntoa(addServer.sin_addr),recvBuff);
+		printf("%s\n",tempBuff);
+	}
+	//发送数据
+	
+	closesocket(sockServer);
+	WSACleanup();
+}
